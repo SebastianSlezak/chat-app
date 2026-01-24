@@ -95,7 +95,8 @@ async function deleteBook() {
 
 function getProgressPercentage() {
   if (!book.value || book.value.totalPages === 0) return 0
-  return Math.round((book.value.currentPage / book.value.totalPages) * 100)
+  const progress = Math.round((book.value.currentPage / book.value.totalPages) * 100)
+  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
 }
 
 function getStatusColor(status: string) {
@@ -170,7 +171,7 @@ onMounted(() => {
                 <span class="font-semibold">Reading Progress</span>
                 <span class="text-sm text-gray-500">{{ getProgressPercentage() }}%</span>
               </div>
-              <UProgress :value="getProgressPercentage()" size="lg" />
+              <UProgress :model-value="getProgressPercentage()" :key="`book-${book.id}-detail-progress`" :animation="false" size="lg" />
             </div>
 
             <div v-if="book.isbn" class="space-y-1">

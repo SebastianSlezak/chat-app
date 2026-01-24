@@ -24,7 +24,8 @@ const filteredBooks = computed(() => {
 
 const readingProgress = computed(() => {
   if (!stats.value || stats.value.totalPages === 0) return 0
-  return Math.round((stats.value.pagesRead / stats.value.totalPages) * 100)
+  const progress = Math.round((stats.value.pagesRead / stats.value.totalPages) * 100)
+  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
 })
 
 async function fetchData() {
@@ -78,8 +79,9 @@ function getStatusLabel(status: string) {
 }
 
 function getBookProgress(book: BookWithCategories) {
-  if (book.totalPages === 0) return 0
-  return Math.round((book.currentPage / book.totalPages) * 100)
+  if (!book || book.totalPages === 0) return 0
+  const progress = Math.round((book.currentPage / book.totalPages) * 100)
+  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
 }
 
 onMounted(() => {
@@ -166,7 +168,7 @@ onMounted(() => {
             <h3 class="font-semibold">Overall Reading Progress</h3>
             <span class="text-sm text-gray-500">{{ stats.pagesRead }} / {{ stats.totalPages }} pages</span>
           </div>
-          <UProgress :value="readingProgress" />
+          <UProgress :model-value="readingProgress" :key="`progress-${stats.pagesRead}`" :animation="false" />
           <p class="text-sm text-gray-500 text-right">{{ readingProgress }}% complete</p>
         </div>
       </UCard>
@@ -213,7 +215,7 @@ onMounted(() => {
                   <span>Progress</span>
                   <span>{{ book.currentPage }} / {{ book.totalPages }} pages</span>
                 </div>
-                <UProgress :value="getBookProgress(book)" />
+                <UProgress :model-value="getBookProgress(book)" :key="`book-${book.id}-progress`" :animation="false" />
               </div>
 
               <div v-if="book.rating" class="flex items-center gap-1">
