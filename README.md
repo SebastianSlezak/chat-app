@@ -244,8 +244,4 @@ MIT
 
 ## Autorzy
 
-- Twoje Imię - Initial work
-
-## Kontakt
-
-W razie pytań: your.email@example.com
+- Sebastian Ślęzak - Initial work
