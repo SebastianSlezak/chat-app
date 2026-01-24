@@ -1,0 +1,43 @@
+{
+  "name": "booktracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:reset": "tsx server/db/reset.ts",
+    "db:seed": "tsx server/db/seed.ts"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.86",
+    "@iconify-json/simple-icons": "^1.2.67",
+    "@nuxt/ui": "^4.4.0",
+    "bcrypt": "^6.0.0",
+    "drizzle-orm": "^0.36.4",
+    "drizzle-zod": "^0.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "nuxt": "^4.2.2",
+    "postgres": "^3.4.5",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.12.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^25.0.10",
+    "drizzle-kit": "^0.28.1",
+    "eslint": "^9.39.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.2"
+  },
+  "packageManager": "pnpm@10.28.1"
+}
