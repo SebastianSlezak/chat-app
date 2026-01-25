@@ -109,13 +109,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             />
           </UFormGroup>
 
-          <UFormGroup label="Status" name="status" required description="Select reading status">
-            <USelectMenu
-              v-model="state.status"
-              :options="statusOptions"
-              value-attribute="value"
-              option-attribute="label"
-            />
+          <UFormGroup label="Status" name="status" required>
+            <div class="grid grid-cols-4 gap-2">
+              <UButton
+                v-for="option in statusOptions"
+                :key="option.value"
+                :variant="state.status === option.value ? 'solid' : 'outline'"
+                :color="state.status === option.value ? 'primary' : 'gray'"
+                @click="state.status = option.value"
+                block
+              >
+                {{ option.label }}
+              </UButton>
+            </div>
           </UFormGroup>
 
           <div class="flex gap-4">
