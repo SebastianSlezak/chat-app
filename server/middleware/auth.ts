@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   
   // Skip auth for public routes
-  const publicRoutes = ['/api/auth/login', '/api/auth/register']
+  const publicRoutes = ['/api/auth/login', '/api/auth/register', '/api/_nuxt_icon']
   if (publicRoutes.some(route => url.pathname.startsWith(route))) {
     return
   }

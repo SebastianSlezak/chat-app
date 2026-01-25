@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { Category } from '~/types'
 
 const { token } = useAuth()
 const toast = useToast()
 const loading = ref(false)
-const categories = ref<Category[]>([])
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   author: z.string().min(1, 'Author is required'),
   isbn: z.string().optional(),
   totalPages: z.number().min(1, 'Total pages must be at least 1'),
-  status: z.enum(['to_read', 'reading', 'completed', 'abandoned']),
-  categoryIds: z.array(z.number()).optional()
+  status: z.enum(['to_read', 'reading', 'completed', 'abandoned'])
 })
 
 type Schema = z.output<typeof schema>
@@ -24,8 +21,7 @@ const state = reactive({
   author: '',
   isbn: '',
   totalPages: 0,
-  status: 'to_read' as const,
-  categoryIds: [] as number[]
+  status: 'to_read' as const
 })
 
 const statusOptions = [
@@ -34,19 +30,6 @@ const statusOptions = [
   { label: 'Completed', value: 'completed' },
   { label: 'Abandoned', value: 'abandoned' }
 ]
-
-async function fetchCategories() {
-  try {
-    const res = await $fetch('/api/categories', {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
-    if (res.success) {
-      categories.value = res.data
-    }
-  } catch (error) {
-    console.error('Failed to fetch categories:', error)
-  }
-}
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   loading.value = true
@@ -75,10 +58,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  fetchCategories()
-})
 </script>
 
 <template>
@@ -130,32 +109,13 @@ onMounted(() => {
             />
           </UFormGroup>
 
-          <UFormGroup label="Status" name="status" required>
+          <UFormGroup label="Status" name="status" required description="Select reading status">
             <USelectMenu
               v-model="state.status"
               :options="statusOptions"
               value-attribute="value"
               option-attribute="label"
             />
-          </UFormGroup>
-
-          <UFormGroup label="Categories" name="categoryIds" description="Select one or more categories">
-            <USelectMenu
-              v-model="state.categoryIds"
-              :options="categories"
-              value-attribute="id"
-              option-attribute="name"
-              multiple
-            >
-              <template #label>
-                <span v-if="state.categoryIds.length === 0" class="text-gray-400">
-                  Select categories
-                </span>
-                <span v-else>
-                  {{ state.categoryIds.length }} selected
-                </span>
-              </template>
-            </USelectMenu>
           </UFormGroup>
 
           <div class="flex gap-4">

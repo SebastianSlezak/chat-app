@@ -1,16 +1,62 @@
 <script setup lang="ts">
 import type { BookWithCategories } from '~/types'
+import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
+interface Category {
+  id: number
+  name: string
+  description?: string | null
+}
 
 const route = useRoute()
+const router = useRouter()
 const { token } = useAuth()
 const toast = useToast()
 
 const book = ref<BookWithCategories | null>(null)
 const loading = ref(true)
-const updateProgressModal = ref(false)
+const editModal = ref(false)
+const editingProgress = ref(false)
 const newProgress = ref(0)
 const updatingProgress = ref(false)
 const deleting = ref(false)
+
+// Edit modal state
+const editLoading = ref(false)
+const saving = ref(false)
+const categories = ref<Category[]>([])
+
+const editSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  author: z.string().min(1, 'Author is required'),
+  isbn: z.string().optional(),
+  totalPages: z.number().min(1, 'Total pages must be at least 1'),
+  currentPage: z.number().min(0).optional(),
+  status: z.enum(['to_read', 'reading', 'completed', 'abandoned']),
+  rating: z.number().min(1).max(5).optional().nullable(),
+  categoryIds: z.array(z.number()).optional()
+})
+
+type EditSchema = z.output<typeof editSchema>
+
+const editState = reactive({
+  title: '',
+  author: '',
+  isbn: '',
+  totalPages: 0,
+  currentPage: 0,
+  status: 'to_read' as const,
+  rating: null as number | null,
+  categoryIds: [] as number[]
+})
+
+const statusOptions = [
+  { label: 'To Read', value: 'to_read' },
+  { label: 'Reading', value: 'reading' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Abandoned', value: 'abandoned' }
+]
 
 async function fetchBook() {
   loading.value = true
@@ -35,7 +81,18 @@ async function fetchBook() {
   }
 }
 
-async function updateProgress() {
+function startEditingProgress() {
+  if (!book.value) return
+  newProgress.value = book.value.currentPage
+  editingProgress.value = true
+}
+
+function cancelEditingProgress() {
+  editingProgress.value = false
+  newProgress.value = book.value?.currentPage || 0
+}
+
+async function saveProgress() {
   if (!book.value) return
 
   updatingProgress.value = true
@@ -48,18 +105,18 @@ async function updateProgress() {
 
     if (res.success) {
       book.value = res.data
-      updateProgressModal.value = false
+      editingProgress.value = false
       toast.add({
         title: 'Success',
-        description: 'Progress updated successfully',
-        color: 'green'
+        description: 'Progress updated',
+        color: 'primary'
       })
     }
   } catch (error: any) {
     toast.add({
       title: 'Error',
       description: error.data?.message || 'Failed to update progress',
-      color: 'red'
+      color: 'error'
     })
   } finally {
     updatingProgress.value = false
@@ -93,6 +150,78 @@ async function deleteBook() {
   }
 }
 
+async function loadEditData() {
+  editLoading.value = true
+  try {
+    const [bookRes, categoriesRes] = await Promise.all([
+      $fetch<any>(`/api/books/${route.params.id}`, {
+        headers: { Authorization: `Bearer ${token.value}` }
+      }),
+      $fetch<any>('/api/categories', {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+    ])
+
+    if (bookRes.success && bookRes.data) {
+      editState.title = bookRes.data.title
+      editState.author = bookRes.data.author
+      editState.isbn = bookRes.data.isbn || ''
+      editState.totalPages = bookRes.data.totalPages
+      editState.currentPage = bookRes.data.currentPage
+      editState.status = bookRes.data.status
+      editState.rating = bookRes.data.rating
+      editState.categoryIds = bookRes.data.categories?.map((c: Category) => c.id) || []
+    }
+
+    if (categoriesRes.success && categoriesRes.data) {
+      categories.value = categoriesRes.data
+    }
+  } catch (error) {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to load book',
+      color: 'error'
+    })
+    editModal.value = false
+  } finally {
+    editLoading.value = false
+  }
+}
+
+async function openEditModal() {
+  await loadEditData()
+  editModal.value = true
+}
+
+async function onEditSubmit(event: FormSubmitEvent<EditSchema>) {
+  saving.value = true
+  try {
+    const res = await $fetch(`/api/books/${route.params.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token.value}` },
+      body: event.data
+    })
+
+    if (res.success) {
+      toast.add({
+        title: 'Success',
+        description: 'Book updated successfully',
+        color: 'primary'
+      })
+      editModal.value = false
+      await fetchBook()
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.data?.message || 'Failed to update book',
+      color: 'error'
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
 function getProgressPercentage() {
   if (!book.value || book.value.totalPages === 0) return 0
   const progress = Math.round((book.value.currentPage / book.value.totalPages) * 100)
@@ -119,8 +248,15 @@ function getStatusLabel(status: string) {
   return labels[status] || status
 }
 
-onMounted(() => {
-  fetchBook()
+onMounted(async () => {
+  await fetchBook()
+
+  // Check if we should open edit modal from query param
+  if (route.query.edit === 'true') {
+    await openEditModal()
+    // Clean up URL
+    router.replace({ query: {} })
+  }
 })
 </script>
 
@@ -161,8 +297,44 @@ onMounted(() => {
                 <p class="text-2xl font-bold">{{ book.totalPages }}</p>
               </div>
               <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Current Page</p>
-                <p class="text-2xl font-bold">{{ book.currentPage }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Page</p>
+                <div v-if="!editingProgress" class="flex items-center gap-2">
+                  <p class="text-2xl font-bold">{{ book.currentPage }}</p>
+                  <UButton
+                    @click="startEditingProgress"
+                    icon="i-lucide-pencil"
+                    size="xs"
+                    variant="ghost"
+                    color="gray"
+                  />
+                </div>
+                <div v-else class="flex items-center gap-2">
+                  <UInput
+                    v-model.number="newProgress"
+                    type="number"
+                    :max="book.totalPages"
+                    min="0"
+                    size="sm"
+                    class="w-24"
+                    autofocus
+                  />
+                  <UButton
+                    @click="saveProgress"
+                    icon="i-lucide-check"
+                    size="xs"
+                    color="primary"
+                    :loading="updatingProgress"
+                    :disabled="updatingProgress"
+                  />
+                  <UButton
+                    @click="cancelEditingProgress"
+                    icon="i-lucide-x"
+                    size="xs"
+                    variant="ghost"
+                    color="gray"
+                    :disabled="updatingProgress"
+                  />
+                </div>
               </div>
             </div>
 
@@ -208,14 +380,7 @@ onMounted(() => {
 
             <div class="flex gap-3 pt-4">
               <UButton
-                icon="i-lucide-refresh-cw"
-                @click="updateProgressModal = true"
-                block
-              >
-                Update Progress
-              </UButton>
-              <UButton
-                :to="`/books/${book.id}/edit`"
+                @click="openEditModal"
                 icon="i-lucide-pencil"
                 variant="soft"
                 block
@@ -236,45 +401,122 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Update Progress Modal -->
-    <UModal v-model="updateProgressModal">
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-bold">Update Reading Progress</h3>
-        </template>
+    <!-- Edit Book Modal -->
+    <UModal v-model="editModal" title="Edit Book" class="sm:max-w-2xl">
+      <template #content>
+        <div v-if="editLoading" class="p-8 text-center">
+          <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
+        </div>
 
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium mb-2">Current Page</label>
+        <UForm v-if="!editLoading" :schema="editSchema" :state="editState" @submit="onEditSubmit" class="p-6 space-y-6">
+          <UFormGroup label="Title" name="title" required>
             <UInput
-              v-model.number="newProgress"
-              type="number"
-              :max="book?.totalPages"
-              min="0"
+              v-model="editState.title"
+              placeholder="Enter book title"
+              icon="i-lucide-book"
             />
-            <p class="text-sm text-gray-500 mt-1">Max: {{ book?.totalPages }} pages</p>
+          </UFormGroup>
+
+          <UFormGroup label="Author" name="author" required>
+            <UInput
+              v-model="editState.author"
+              placeholder="Enter author name"
+              icon="i-lucide-user"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="ISBN" name="isbn" description="Optional">
+            <UInput
+              v-model="editState.isbn"
+              placeholder="978-3-16-148410-0"
+              icon="i-lucide-barcode"
+            />
+          </UFormGroup>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormGroup label="Total Pages" name="totalPages" required>
+              <UInput
+                v-model.number="editState.totalPages"
+                type="number"
+                placeholder="0"
+                icon="i-lucide-file-text"
+              />
+            </UFormGroup>
+
+            <UFormGroup label="Current Page" name="currentPage">
+              <UInput
+                v-model.number="editState.currentPage"
+                type="number"
+                placeholder="0"
+                icon="i-lucide-bookmark"
+              />
+            </UFormGroup>
           </div>
 
-          <div class="flex gap-3">
+          <UFormGroup label="Status" name="status" required>
+            <USelectMenu
+              v-model="editState.status"
+              :options="statusOptions"
+              value-attribute="value"
+              option-attribute="label"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Rating" name="rating" description="Rate from 1 to 5 stars">
+            <div class="flex gap-2">
+              <UButton
+                v-for="i in 5"
+                :key="i"
+                :variant="editState.rating && i <= editState.rating ? 'solid' : 'outline'"
+                :color="editState.rating && i <= editState.rating ? 'warning' : 'neutral'"
+                size="sm"
+                icon="i-lucide-star"
+                @click="editState.rating = i"
+              />
+              <UButton
+                v-if="editState.rating"
+                variant="ghost"
+                size="sm"
+                icon="i-lucide-x"
+                @click="editState.rating = null"
+              >
+                Clear
+              </UButton>
+            </div>
+          </UFormGroup>
+
+          <UFormGroup label="Categories" name="categoryIds">
+            <USelectMenu
+              v-model="editState.categoryIds"
+              :options="categories"
+              value-attribute="id"
+              option-attribute="name"
+              multiple
+              :placeholder="editState.categoryIds.length === 0 ? 'Select categories' : `${editState.categoryIds.length} selected`"
+            />
+          </UFormGroup>
+
+          <div class="flex gap-4 pt-4">
             <UButton
-              @click="updateProgress"
+              type="button"
+              variant="outline"
               block
-              :loading="updatingProgress"
-              :disabled="updatingProgress"
-            >
-              Update
-            </UButton>
-            <UButton
-              variant="soft"
-              block
-              @click="updateProgressModal = false"
-              :disabled="updatingProgress"
+              :disabled="saving"
+              @click="editModal = false"
             >
               Cancel
             </UButton>
+            <UButton
+              type="submit"
+              block
+              :loading="saving"
+              :disabled="saving"
+            >
+              Save Changes
+            </UButton>
           </div>
-        </div>
-      </UCard>
+        </UForm>
+      </template>
     </UModal>
   </div>
 </template>

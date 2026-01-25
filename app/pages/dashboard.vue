@@ -239,7 +239,7 @@ onMounted(() => {
                   View
                 </UButton>
                 <UButton
-                  :to="`/books/${book.id}/edit`"
+                  :to="`/books/${book.id}?edit=true`"
                   variant="soft"
                   size="sm"
                   block
