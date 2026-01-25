@@ -3,18 +3,15 @@ import { verifyToken, extractToken } from '../utils/jwt'
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   
-  // Skip auth for public routes
   const publicRoutes = ['/api/auth/login', '/api/auth/register', '/api/_nuxt_icon']
   if (publicRoutes.some(route => url.pathname.startsWith(route))) {
     return
   }
 
-  // Skip auth for non-API routes
   if (!url.pathname.startsWith('/api/')) {
     return
   }
 
-  // Extract and verify token
   const token = extractToken(event)
   if (!token) {
     throw createError({

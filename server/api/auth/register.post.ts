@@ -10,7 +10,6 @@ const registerSchema = z.object({
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   
-  // Validate input
   const validation = registerSchema.safeParse(body)
   if (!validation.success) {
     throw createError({

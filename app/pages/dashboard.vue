@@ -58,7 +58,7 @@ const filteredCount = computed(() => {
 const readingProgress = computed(() => {
   if (!stats.value || stats.value.totalPages === 0) return 0
   const progress = Math.round((stats.value.pagesRead / stats.value.totalPages) * 100)
-  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
+  return Math.min(100, Math.max(0, progress))
 })
 
 async function fetchData() {
@@ -114,7 +114,7 @@ function getStatusLabel(status: string) {
 function getBookProgress(book: BookWithCategories) {
   if (!book || book.totalPages === 0) return 0
   const progress = Math.round((book.currentPage / book.totalPages) * 100)
-  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
+  return Math.min(100, Math.max(0, progress))
 }
 
 onMounted(() => {

@@ -1,11 +1,9 @@
 import { pgTable, text, varchar, integer, timestamp, boolean, serial, pgEnum, primaryKey, unique } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
-// Enums
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin'])
 export const readingStatusEnum = pgEnum('reading_status', ['to_read', 'reading', 'completed', 'abandoned'])
 
-// Users table
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
@@ -16,7 +14,6 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
-// Categories table
 export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull().unique(),
@@ -24,7 +21,6 @@ export const categories = pgTable('categories', {
   createdAt: timestamp('created_at').defaultNow().notNull()
 })
 
-// Books table
 export const books = pgTable('books', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -34,7 +30,7 @@ export const books = pgTable('books', {
   totalPages: integer('total_pages').notNull(),
   currentPage: integer('current_page').default(0).notNull(),
   status: readingStatusEnum('status').default('to_read').notNull(),
-  rating: integer('rating'), // 1-5 scale
+  rating: integer('rating'),
   coverImage: text('cover_image'),
   startDate: timestamp('start_date'),
   finishDate: timestamp('finish_date'),
@@ -42,7 +38,6 @@ export const books = pgTable('books', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
-// Book categories (many-to-many)
 export const bookCategories = pgTable('book_categories', {
   bookId: integer('book_id').notNull().references(() => books.id, { onDelete: 'cascade' }),
   categoryId: integer('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' })
@@ -50,7 +45,6 @@ export const bookCategories = pgTable('book_categories', {
   pk: primaryKey({ columns: [table.bookId, table.categoryId] })
 }))
 
-// Reviews table
 export const reviews = pgTable('reviews', {
   id: serial('id').primaryKey(),
   bookId: integer('book_id').notNull().references(() => books.id, { onDelete: 'cascade' }),
@@ -62,7 +56,6 @@ export const reviews = pgTable('reviews', {
   unq: unique().on(table.bookId, table.userId)
 }))
 
-// Reading goals table
 export const readingGoals = pgTable('reading_goals', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -75,7 +68,6 @@ export const readingGoals = pgTable('reading_goals', {
   unq: unique().on(table.userId, table.year)
 }))
 
-// Relations
 export const usersRelations = relations(users, ({ many }) => ({
   books: many(books),
   reviews: many(reviews),

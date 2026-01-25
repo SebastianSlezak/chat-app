@@ -9,7 +9,6 @@ const loginSchema = z.object({
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   
-  // Validate input
   const validation = loginSchema.safeParse(body)
   if (!validation.success) {
     throw createError({

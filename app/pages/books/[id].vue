@@ -22,7 +22,6 @@ const newProgress = ref(0)
 const updatingProgress = ref(false)
 const deleting = ref(false)
 
-// Edit modal state
 const editLoading = ref(false)
 const saving = ref(false)
 const categories = ref<Category[]>([])
@@ -225,7 +224,7 @@ async function onEditSubmit(event: FormSubmitEvent<EditSchema>) {
 function getProgressPercentage() {
   if (!book.value || book.value.totalPages === 0) return 0
   const progress = Math.round((book.value.currentPage / book.value.totalPages) * 100)
-  return Math.min(100, Math.max(0, progress)) // Clamp between 0-100
+  return Math.min(100, Math.max(0, progress))
 }
 
 function getStatusColor(status: string) {
@@ -251,10 +250,8 @@ function getStatusLabel(status: string) {
 onMounted(async () => {
   await fetchBook()
 
-  // Check if we should open edit modal from query param
   if (route.query.edit === 'true') {
     await openEditModal()
-    // Clean up URL
     router.replace({ query: {} })
   }
 })

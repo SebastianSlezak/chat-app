@@ -9,7 +9,6 @@ const db = drizzle(connection)
 async function reset() {
   console.log('🗑️  Resetting database...')
 
-  // Drop all tables in correct order (respecting foreign keys)
   await db.execute(sql`DROP TABLE IF EXISTS reviews CASCADE`)
   await db.execute(sql`DROP TABLE IF EXISTS reading_goals CASCADE`)
   await db.execute(sql`DROP TABLE IF EXISTS book_categories CASCADE`)

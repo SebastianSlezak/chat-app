@@ -10,7 +10,6 @@ const db = drizzle(connection, { schema })
 async function seed() {
   console.log('🌱 Seeding database...')
 
-  // Create users
   const hashedPassword = await bcrypt.hash('password123', 10)
   
   const [user1, user2, admin] = await db.insert(schema.users).values([
@@ -36,7 +35,6 @@ async function seed() {
 
   console.log('✅ Created 3 users')
 
-  // Create categories
   const categoryData = [
     { name: 'Fantasy', description: 'Fantastyka i światy wyobraźni' },
     { name: 'Science Fiction', description: 'Fantastyka naukowa' },
@@ -53,7 +51,6 @@ async function seed() {
   const createdCategories = await db.insert(schema.categories).values(categoryData).returning()
   console.log('✅ Created 10 categories')
 
-  // Create books for user1
   const booksUser1 = await db.insert(schema.books).values([
     {
       userId: user1.id,
@@ -142,7 +139,6 @@ async function seed() {
 
   console.log('✅ Created 8 books for user1')
 
-  // Create books for user2
   const booksUser2 = await db.insert(schema.books).values([
     {
       userId: user2.id,
@@ -253,40 +249,37 @@ async function seed() {
 
   console.log('✅ Created 10 books for user2')
 
-  // Assign categories to books (user1)
   await db.insert(schema.bookCategories).values([
-    { bookId: booksUser1[0].id, categoryId: createdCategories[0].id }, // LOTR - Fantasy
-    { bookId: booksUser1[0].id, categoryId: createdCategories[8].id }, // LOTR - Fiction
-    { bookId: booksUser1[1].id, categoryId: createdCategories[0].id }, // Hobbit - Fantasy
-    { bookId: booksUser1[2].id, categoryId: createdCategories[1].id }, // Dune - Sci-Fi
-    { bookId: booksUser1[3].id, categoryId: createdCategories[1].id }, // Foundation - Sci-Fi
-    { bookId: booksUser1[4].id, categoryId: createdCategories[1].id }, // Neuromancer - Sci-Fi
-    { bookId: booksUser1[5].id, categoryId: createdCategories[1].id }, // 1984 - Sci-Fi
-    { bookId: booksUser1[5].id, categoryId: createdCategories[8].id }, // 1984 - Fiction
-    { bookId: booksUser1[6].id, categoryId: createdCategories[1].id }, // Brave New World - Sci-Fi
-    { bookId: booksUser1[7].id, categoryId: createdCategories[1].id }, // Solaris - Sci-Fi
+    { bookId: booksUser1[0].id, categoryId: createdCategories[0].id },
+    { bookId: booksUser1[0].id, categoryId: createdCategories[8].id },
+    { bookId: booksUser1[1].id, categoryId: createdCategories[0].id },
+    { bookId: booksUser1[2].id, categoryId: createdCategories[1].id },
+    { bookId: booksUser1[3].id, categoryId: createdCategories[1].id },
+    { bookId: booksUser1[4].id, categoryId: createdCategories[1].id },
+    { bookId: booksUser1[5].id, categoryId: createdCategories[1].id },
+    { bookId: booksUser1[5].id, categoryId: createdCategories[8].id },
+    { bookId: booksUser1[6].id, categoryId: createdCategories[1].id },
+    { bookId: booksUser1[7].id, categoryId: createdCategories[1].id },
   ])
 
-  // Assign categories to books (user2)
   await db.insert(schema.bookCategories).values([
-    { bookId: booksUser2[0].id, categoryId: createdCategories[2].id }, // Orient Express - Mystery
-    { bookId: booksUser2[1].id, categoryId: createdCategories[2].id }, // Da Vinci Code - Mystery
-    { bookId: booksUser2[2].id, categoryId: createdCategories[2].id }, // Girl with Dragon Tattoo - Mystery
-    { bookId: booksUser2[3].id, categoryId: createdCategories[3].id }, // Pride and Prejudice - Romance
-    { bookId: booksUser2[3].id, categoryId: createdCategories[8].id }, // Pride and Prejudice - Fiction
-    { bookId: booksUser2[4].id, categoryId: createdCategories[3].id }, // Anna Karenina - Romance
-    { bookId: booksUser2[4].id, categoryId: createdCategories[8].id }, // Anna Karenina - Fiction
-    { bookId: booksUser2[5].id, categoryId: createdCategories[4].id }, // Steve Jobs - Biography
-    { bookId: booksUser2[6].id, categoryId: createdCategories[5].id }, // Sapiens - History
-    { bookId: booksUser2[6].id, categoryId: createdCategories[9].id }, // Sapiens - Non-Fiction
-    { bookId: booksUser2[7].id, categoryId: createdCategories[6].id }, // Atomic Habits - Self-Help
-    { bookId: booksUser2[8].id, categoryId: createdCategories[6].id }, // Thinking Fast and Slow - Self-Help
-    { bookId: booksUser2[9].id, categoryId: createdCategories[7].id }, // Zero to One - Business
+    { bookId: booksUser2[0].id, categoryId: createdCategories[2].id },
+    { bookId: booksUser2[1].id, categoryId: createdCategories[2].id },
+    { bookId: booksUser2[2].id, categoryId: createdCategories[2].id },
+    { bookId: booksUser2[3].id, categoryId: createdCategories[3].id },
+    { bookId: booksUser2[3].id, categoryId: createdCategories[8].id },
+    { bookId: booksUser2[4].id, categoryId: createdCategories[3].id },
+    { bookId: booksUser2[4].id, categoryId: createdCategories[8].id },
+    { bookId: booksUser2[5].id, categoryId: createdCategories[4].id },
+    { bookId: booksUser2[6].id, categoryId: createdCategories[5].id },
+    { bookId: booksUser2[6].id, categoryId: createdCategories[9].id },
+    { bookId: booksUser2[7].id, categoryId: createdCategories[6].id },
+    { bookId: booksUser2[8].id, categoryId: createdCategories[6].id },
+    { bookId: booksUser2[9].id, categoryId: createdCategories[7].id },
   ])
 
   console.log('✅ Assigned categories to books')
 
-  // Create reviews
   await db.insert(schema.reviews).values([
     {
       bookId: booksUser1[0].id,
@@ -327,7 +320,6 @@ async function seed() {
 
   console.log('✅ Created 7 reviews')
 
-  // Create reading goals
   await db.insert(schema.readingGoals).values([
     {
       userId: user1.id,

@@ -72,7 +72,6 @@ export async function createBook(userId: number, data: Omit<NewBook, 'userId'> &
     currentPage: bookData.currentPage || 0
   }).returning()
 
-  // Add categories
   if (categoryIds && categoryIds.length > 0) {
     await db.insert(bookCategories).values(
       categoryIds.map(categoryId => ({
@@ -88,7 +87,6 @@ export async function createBook(userId: number, data: Omit<NewBook, 'userId'> &
 export async function updateBook(bookId: number, userId: number, data: Partial<NewBook> & { categoryIds?: number[] }) {
   const { categoryIds, ...bookData } = data
 
-  // Verify ownership
   const existingBook = await db.query.books.findFirst({
     where: and(eq(books.id, bookId), eq(books.userId, userId))
   })
@@ -100,12 +98,10 @@ export async function updateBook(bookId: number, userId: number, data: Partial<N
     })
   }
 
-  // Update book
   await db.update(books)
     .set({ ...bookData, updatedAt: new Date() })
     .where(eq(books.id, bookId))
 
-  // Update categories if provided
   if (categoryIds !== undefined) {
     await db.delete(bookCategories).where(eq(bookCategories.bookId, bookId))
     
@@ -163,7 +159,6 @@ export async function updateBookProgress(bookId: number, userId: number, current
     updatedAt: new Date()
   }
 
-  // Auto-update status based on progress
   if (currentPage === 0) {
     updateData.status = 'to_read'
     updateData.startDate = null

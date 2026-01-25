@@ -6,7 +6,6 @@ import { signToken } from '../utils/jwt'
 import type { NewUser, User, JWTPayload } from '~/types'
 
 export async function registerUser(data: { email: string; password: string; name: string }) {
-  // Check if user exists
   const existingUser = await db.query.users.findFirst({
     where: eq(users.email, data.email)
   })
@@ -18,10 +17,8 @@ export async function registerUser(data: { email: string; password: string; name
     })
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10)
 
-  // Create user
   const [newUser] = await db.insert(users).values({
     email: data.email,
     password: hashedPassword,
@@ -29,7 +26,6 @@ export async function registerUser(data: { email: string; password: string; name
     role: 'user'
   }).returning()
 
-  // Generate token
   const token = signToken({
     userId: newUser.id,
     email: newUser.email,
@@ -48,7 +44,6 @@ export async function registerUser(data: { email: string; password: string; name
 }
 
 export async function loginUser(email: string, password: string) {
-  // Find user
   const user = await db.query.users.findFirst({
     where: eq(users.email, email)
   })
@@ -60,7 +55,6 @@ export async function loginUser(email: string, password: string) {
     })
   }
 
-  // Verify password
   const isValidPassword = await bcrypt.compare(password, user.password)
   if (!isValidPassword) {
     throw createError({
@@ -69,7 +63,6 @@ export async function loginUser(email: string, password: string) {
     })
   }
 
-  // Generate token
   const token = signToken({
     userId: user.id,
     email: user.email,

@@ -1,6 +1,6 @@
 export const useAuth = () => {
   const token = useCookie('auth_token', {
-    maxAge: 60 * 60 * 24 * 7 // 7 days
+    maxAge: 60 * 60 * 24 * 7
   })
 
   const user = useState('user', () => null)
